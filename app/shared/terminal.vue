@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { jwtDecode } from "jwt-decode";
 import { status, TERMINAL } from "./constants/terminal.ts";
 import {
   VisibilityArea,
-  type AuthResponse,
-  type JwtPayload,
   type MenuItems,
-  type WormholeLog,
 } from "./models/terminal";
+import { useTerminalScroll } from "./composables/useTerminalScroll";
+import { useWormholeAuth } from "./composables/useWormholeAuth";
 
 import TerminalLoader from "./terminalLoader.vue";
 import TerminalExperience from "./terminalExperience.vue";
@@ -17,24 +15,34 @@ import TerminalSkills from "./terminalSkills.vue";
 import TerminalWormHole from "./terminalWormHole.vue";
 
 const selectedIndex = ref(0);
-const terminalBodyRef = ref<HTMLElement | null>(null);
+const {
+  terminalBodyRef,
+  scrollTerminalBy,
+  scrollTerminalToBottom,
+} = useTerminalScroll();
 
 const wormholeRef = ref<InstanceType<typeof TerminalWormHole> | null>(null);
 
 const wormholeFocusIndex = ref(0);
 const wormholeActionFocusIndex = 2;
 
-const wormholeResponse = ref("");
 const wormholeEmail = ref("");
 const wormholePassword = ref("");
 
-const isAuthenticated = ref(false);
-const isConnecting = ref(false);
-
-const wormholeLogs = ref<WormholeLog[]>([]);
-
-const decodeTokenLogs = ref<JwtPayload | null>(null);
-const lastDecodedToken = ref<string | null>(null);
+const {
+  isAuthenticated,
+  isConnecting,
+  wormholeLogs,
+  decodeTokenLogs,
+  connectToSignFlow,
+  decodeToken,
+  refreshToken,
+  clearAuthInfos,
+} = useWormholeAuth({
+  email: wormholeEmail,
+  password: wormholePassword,
+  onOutput: scrollTerminalToBottom,
+});
 
 const currentArea = ref<VisibilityArea>(VisibilityArea.main_terminal);
 
@@ -77,34 +85,21 @@ const isMenuSelectionVisible = computed(() => {
   return wormholeFocusIndex.value === wormholeActionFocusIndex;
 });
 
-async function scrollTerminalToBottom() {
-  await nextTick();
+function selectMenuItem(index: number) {
+  selectedIndex.value = index;
 
-  window.requestAnimationFrame(() => {
-    const terminalBody = terminalBodyRef.value;
-
-    if (!terminalBody) {
-      return;
-    }
-
-    terminalBody.scrollTo({
-      top: terminalBody.scrollHeight,
-      behavior: "smooth",
-    });
-  });
+  if (
+    currentArea.value === VisibilityArea.wormhole_terminal &&
+    !isAuthenticated.value
+  ) {
+    wormholeFocusIndex.value = wormholeActionFocusIndex;
+    wormholeRef.value?.blurInputs();
+  }
 }
 
-function scrollTerminalBy(direction: -1 | 1) {
-  const terminalBody = terminalBodyRef.value;
-
-  if (!terminalBody) {
-    return;
-  }
-
-  terminalBody.scrollBy({
-    top: direction * Math.round(terminalBody.clientHeight * 0.45),
-    behavior: "smooth",
-  });
+async function activateMenuItem(index: number) {
+  selectMenuItem(index);
+  await handleEnter();
 }
 
 function moveUp() {
@@ -291,7 +286,11 @@ async function handleEnter() {
       return;
 
     case "signflow-visit":
-      window.open("https://usesignflow.com", "_blank");
+      window.open(
+        "https://usesignflow.com",
+        "_blank",
+        "noopener,noreferrer",
+      );
 
       break;
 
@@ -337,144 +336,6 @@ async function handleEnter() {
     default:
       console.log("Selected:", item.id);
   }
-}
-
-async function connectToSignFlow() {
-  clearAuthInfos();
-
-  isConnecting.value = true;
-
-  wormholeResponse.value = "CONNECTING TO SIGNFLOW...";
-
-  try {
-    const response: AuthResponse = await $fetch("/api/wormhole/login", {
-      method: "POST",
-
-      body: {
-        email: wormholeEmail.value,
-        password: wormholePassword.value,
-      },
-    });
-
-    wormholeLogs.value.push({
-      type: "success",
-
-      message: "AUTHENTICATION SUCCESSFUL",
-
-      data: response,
-    });
-
-    isAuthenticated.value = true;
-
-    wormholeResponse.value = "AUTHENTICATION SUCCESSFUL";
-  } catch (error: any) {
-    const message =
-      error?.data?.data?.message ??
-      error?.data?.message ??
-      "AUTHENTICATION FAILED";
-
-    wormholeLogs.value.push({
-      type: "error",
-
-      message,
-    });
-
-    isAuthenticated.value = false;
-
-    wormholeResponse.value = "AUTHENTICATION FAILED";
-  } finally {
-    isConnecting.value = false;
-
-    await scrollTerminalToBottom();
-  }
-}
-
-function decodeToken() {
-  const token = wormholeLogs.value.find(
-    (log) => log.type === "success" && log.data?.token,
-  )?.data?.token;
-
-  if (!token) {
-    return;
-  }
-
-  if (lastDecodedToken.value === token) {
-    return;
-  }
-
-  decodeTokenLogs.value = jwtDecode<JwtPayload | null>(token);
-
-  lastDecodedToken.value = token;
-
-  void scrollTerminalToBottom();
-}
-
-async function refreshToken() {
-  const authLog = [...wormholeLogs.value]
-    .reverse()
-    .find((log) => log.type === "success" && log.data);
-
-  const authData = authLog?.data;
-
-  if (!authData) {
-    return;
-  }
-
-  try {
-    const response: AuthResponse = await $fetch("/api/wormhole/refresh", {
-      method: "POST",
-
-      body: {
-        email: authData.email || wormholeEmail.value,
-
-        refreshToken: authData.refreshToken,
-      },
-    });
-
-    const updatedAuthData: AuthResponse = {
-      ...authData,
-
-      ...response,
-
-      email: response.email || authData.email,
-
-      fullName: response.fullName || authData.fullName,
-    };
-
-    const index = wormholeLogs.value.findIndex(
-      (log) => log.type === "success" && log.data,
-    );
-
-    if (index !== -1) {
-      wormholeLogs.value[index] = {
-        type: "success",
-
-        message: "ACCESS TOKEN REFRESHED",
-
-        data: updatedAuthData,
-      };
-    }
-
-    decodeTokenLogs.value = null;
-
-    lastDecodedToken.value = null;
-
-    console.log("UPDATED AUTH:", updatedAuthData);
-  } catch (error) {
-    console.log("REFRESH FAILED:", error);
-  } finally {
-    await scrollTerminalToBottom();
-  }
-}
-
-function clearAuthInfos() {
-  isAuthenticated.value = false;
-
-  wormholeLogs.value = [];
-
-  decodeTokenLogs.value = null;
-
-  lastDecodedToken.value = null;
 }
 
 function handleEscape() {
@@ -604,16 +465,20 @@ onUnmounted(() => {
 
           <nav class="terminal-menu">
             <div v-for="(item, index) in visibleMenuItems" :key="item.id">
-              <div
+              <button
+                type="button"
                 class="menu-item"
                 :class="{
                   active: index === selectedIndex && isMenuSelectionVisible,
                 }"
+                @mouseenter="selectMenuItem(index)"
+                @focus="selectMenuItem(index)"
+                @click="activateMenuItem(index)"
               >
                 <span class="arrow"> &gt; </span>
 
                 {{ item.name }}
-              </div>
+              </button>
             </div>
           </nav>
         </div>
@@ -768,8 +633,14 @@ body {
   width: fit-content;
 
   padding: 2px 12px;
+  border: 0;
+  outline: none;
+  display: block;
 
+  background: transparent;
   color: var(--terminal-muted);
+  font: inherit;
+  text-align: left;
 
   cursor: pointer;
 
@@ -790,6 +661,10 @@ body {
   color: var(--terminal-accent);
 
   background: rgba(140, 255, 176, 0.04);
+}
+
+.menu-item:hover {
+  color: var(--terminal-accent);
 }
 
 .menu-item.active .arrow {

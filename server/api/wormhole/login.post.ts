@@ -1,7 +1,8 @@
 export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig();
   const body = await readBody(event);
 
-  return await $fetch("https://api.usesignflow.com/api/auth/login", {
+  return await $fetch(`${config.signflowApiBaseUrl}/api/auth/login`, {
     method: "POST",
     body: {
       email: body.email,
