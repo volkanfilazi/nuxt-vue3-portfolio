@@ -1,35 +1,62 @@
 <script setup lang="ts">
-import { TERMINAL } from "./constants/terminal";
+import { TERMINAL } from "../constants/terminal";
 
 const skillGroups = [
   {
     title: "FRONTEND",
     level: "PRIMARY",
-    items: ["Angular 14-21", "Vue 3", "Nuxt", "TypeScript", "JavaScript", "HTML5", "SCSS"],
+    items: [
+      "Angular 14-21",
+      "Vue 3",
+      "Nuxt",
+      "TypeScript",
+      "JavaScript",
+      "HTML5",
+      "SCSS",
+    ],
   },
   {
     title: "BACKEND",
     level: "STRONG",
-    items: ["C#", ".NET Web API", "Node.js", "Express", "REST APIs", "MongoDB", "SQL"],
+    items: [
+      "C#",
+      ".NET Web API",
+      "Node.js",
+      "Express",
+      "REST APIs",
+      "MongoDB",
+      "SQL",
+    ],
   },
   {
     title: "QUALITY",
     level: "PRACTICAL",
-    items: ["Cypress", "Playwright", "Unit Testing", "Code Reviews", "Clean Architecture"],
+    items: [
+      "Cypress",
+      "Playwright",
+      "Unit Testing",
+      "Code Reviews",
+      "Clean Architecture",
+    ],
   },
   {
     title: "DELIVERY",
     level: "WORKFLOW",
-    items: ["GitHub Actions", "GitLab CI", "Azure DevOps", "Git", "Jira", "Figma"],
+    items: [
+      "GitHub Actions",
+      "GitLab CI",
+      "Azure DevOps",
+      "Git",
+      "Jira",
+      "Figma",
+    ],
   },
 ];
 </script>
 
 <template>
   <section class="skills">
-    <div class="prompt">
-      {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/skills$
-    </div>
+    <div class="prompt">{{ TERMINAL.user }}@{{ TERMINAL.host }}:~/skills$</div>
 
     <div class="skills-content">
       <div class="section-label">// TECHNICAL KNOWLEDGE</div>
@@ -46,10 +73,7 @@ const skillGroups = [
           </div>
 
           <div class="items">
-            <span
-              v-for="item in group.items"
-              :key="item"
-            >
+            <span v-for="item in group.items" :key="item">
               {{ item }}
             </span>
           </div>
@@ -58,14 +82,13 @@ const skillGroups = [
 
       <div class="summary">
         <span class="accent">SYSTEM NOTE</span>
-        Full-stack profile focused on production-ready SaaS, workflow automation,
-        secure token-based access, document flows and maintainable UI architecture.
+        Full-stack profile focused on production-ready SaaS, workflow
+        automation, secure token-based access, document flows and maintainable
+        UI architecture.
       </div>
     </div>
 
-    <div class="hint">
-      PRESS <span>ESC</span> TO RETURN
-    </div>
+    <div class="hint">PRESS <span>ESC</span> TO RETURN</div>
   </section>
 </template>
 

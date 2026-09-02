@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { VisibilityArea, type MenuItems } from "~/shared/models/terminal";
-import Terminal from "~/shared/terminal.vue";
+import { VisibilityArea, type MenuItems } from "~/models/terminal";
 
 definePageMeta({
   layout: "default",

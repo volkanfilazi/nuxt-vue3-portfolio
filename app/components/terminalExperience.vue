@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TERMINAL } from "./constants/terminal";
+import { TERMINAL } from "../constants/terminal";
 
 const experiences = [
   {
@@ -66,19 +66,13 @@ const experiences = [
           </div>
 
           <ul>
-            <li
-              v-for="point in item.points"
-              :key="point"
-            >
+            <li v-for="point in item.points" :key="point">
               {{ point }}
             </li>
           </ul>
 
           <div class="stack">
-            <span
-              v-for="tech in item.stack"
-              :key="tech"
-            >
+            <span v-for="tech in item.stack" :key="tech">
               {{ tech }}
             </span>
           </div>
@@ -86,9 +80,7 @@ const experiences = [
       </div>
     </div>
 
-    <div class="hint">
-      PRESS <span>ESC</span> TO RETURN
-    </div>
+    <div class="hint">PRESS <span>ESC</span> TO RETURN</div>
   </section>
 </template>
 
