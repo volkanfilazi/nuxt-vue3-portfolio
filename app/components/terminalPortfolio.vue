@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { TERMINAL } from './constants/terminal';
+import { TERMINAL } from "../constants/terminal";
 
 const technologies = ["ANGULAR", "VUE", "NUXT", "TYPESCRIPT", "C#", ".NET"];
 </script>
 <template>
   <section class="portfolio">
-    <div class="prompt">{{ TERMINAL.user }}@{{ TERMINAL.host }}:~/portfolio$</div>
+    <div class="prompt">
+      {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/portfolio$
+    </div>
 
     <div class="content">
       <div class="label">// PROFILE</div>

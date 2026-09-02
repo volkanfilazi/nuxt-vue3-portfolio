@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import { status, TERMINAL } from "./constants/terminal.ts";
-import {
-  VisibilityArea,
-  type MenuItems,
-} from "./models/terminal";
-import { useTerminalScroll } from "./composables/useTerminalScroll";
-import { useWormholeAuth } from "./composables/useWormholeAuth";
-
+import { status, TERMINAL } from "../constants/terminal.ts";
+import { VisibilityArea, type MenuItems } from "../models/terminal.ts";
 import TerminalLoader from "./terminalLoader.vue";
 import TerminalExperience from "./terminalExperience.vue";
 import TerminalPortfolio from "./terminalPortfolio.vue";
@@ -15,11 +9,10 @@ import TerminalSkills from "./terminalSkills.vue";
 import TerminalWormHole from "./terminalWormHole.vue";
 
 const selectedIndex = ref(0);
-const {
-  terminalBodyRef,
-  scrollTerminalBy,
-  scrollTerminalToBottom,
-} = useTerminalScroll();
+const { terminalBodyRef, scrollTerminalBy, scrollTerminalToBottom } =
+  useTerminalScroll();
+
+const minimize = ref(false);
 
 const wormholeRef = ref<InstanceType<typeof TerminalWormHole> | null>(null);
 
@@ -49,6 +42,28 @@ const currentArea = ref<VisibilityArea>(VisibilityArea.main_terminal);
 const props = defineProps<{
   menuItems: MenuItems[];
 }>();
+
+const currentLocation = computed(() => {
+  switch (currentArea.value) {
+    case VisibilityArea.portfolio_terminal:
+      return "~/portfolio";
+
+    case VisibilityArea.experience_terminal:
+      return "~/experience";
+
+    case VisibilityArea.projects_terminal:
+      return "~/projects";
+
+    case VisibilityArea.skills_terminal:
+      return "~/skills";
+
+    case VisibilityArea.wormhole_terminal:
+      return "~/wormhole";
+
+    default:
+      return "~";
+  }
+});
 
 const visibleMenuItems = computed(() => {
   return props.menuItems.filter((item) => {
@@ -193,6 +208,10 @@ function moveDown() {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (minimize.value) {
+    return;
+  }
+
   if (event.key === "ArrowUp") {
     event.preventDefault();
 
@@ -286,11 +305,7 @@ async function handleEnter() {
       return;
 
     case "signflow-visit":
-      window.open(
-        "https://usesignflow.com",
-        "_blank",
-        "noopener,noreferrer",
-      );
+      window.open("https://usesignflow.com", "_blank", "noopener,noreferrer");
 
       break;
 
@@ -374,6 +389,14 @@ function handleEscape() {
   }
 }
 
+function minimizeTerminal() {
+  minimize.value = true;
+}
+
+function restoreTerminal() {
+  minimize.value = false;
+}
+
 onMounted(() => {
   window.addEventListener("keydown", handleKeydown);
 });
@@ -387,113 +410,135 @@ onUnmounted(() => {
   <div
     class="vh-100 d-flex flex-column align-items-center justify-content-center"
   >
-    <div class="terminal">
-      <div class="terminal-header">
-        <div class="window-controls">
-          <span class="bg-danger"></span>
-          <span class="bg-primary"></span>
-          <span class="bg-warning"></span>
-        </div>
-
-        <div class="terminal-title">SYSTEM TERMINAL</div>
-
-        <div class="terminal-version">v1.0.4</div>
-      </div>
-
-      <div ref="terminalBodyRef" class="terminal-body">
-        <TerminalLoader :loading="isConnecting" />
-
-        <div v-if="currentArea === VisibilityArea.main_terminal" class="boot">
-          <div class="prompt">
-            {{ TERMINAL.user }}@{{ TERMINAL.host }}:~$ ./initialize
+    <Transition name="terminal-window" mode="out-in">
+      <div v-if="!minimize" class="terminal">
+        <div class="terminal-header">
+          <div class="window-controls">
+            <span class="window-control bg-danger"></span>
+            <span class="window-control bg-primary"></span>
+            <button
+              type="button"
+              class="window-control bg-warning"
+              aria-label="Minimize terminal"
+              @click="minimizeTerminal"
+            ></button>
           </div>
 
-          <div class="system-message">&gt; INITIALIZING SYSTEM...</div>
+          <div class="terminal-title">SYSTEM TERMINAL</div>
 
-          <div class="status">
-            <div v-for="value in status" :key="value">
-              <div class="d-flex flex-row gap-1">
-                <span>
-                  {{ value }}
-                </span>
+          <div class="terminal-version">v1.0.4</div>
+        </div>
+
+        <div ref="terminalBodyRef" class="terminal-body">
+          <TerminalLoader :loading="isConnecting" />
+
+          <div v-if="currentArea === VisibilityArea.main_terminal" class="boot">
+            <div class="prompt">
+              {{ TERMINAL.user }}@{{ TERMINAL.host }}:~$ ./initialize
+            </div>
+
+            <div class="system-message">&gt; INITIALIZING SYSTEM...</div>
+
+            <div class="status">
+              <div v-for="value in status" :key="value">
+                <div class="d-flex flex-row gap-1">
+                  <span>
+                    {{ value }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <TerminalPortfolio
-          v-else-if="currentArea === VisibilityArea.portfolio_terminal"
-        />
-
-        <TerminalExperience
-          v-else-if="currentArea === VisibilityArea.experience_terminal"
-        />
-
-        <TerminalProjects
-          v-else-if="currentArea === VisibilityArea.projects_terminal"
-        />
-
-        <TerminalSkills
-          v-else-if="currentArea === VisibilityArea.skills_terminal"
-        />
-
-        <div v-else-if="currentArea === VisibilityArea.contact_terminal">
-          <div class="prompt">
-            {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/contact$
-          </div>
-          <div>CONTACT</div>
-        </div>
-
-        <div v-else-if="currentArea === VisibilityArea.wormhole_terminal">
-          <div class="prompt">
-            {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/wormhole$
-          </div>
-
-          <TerminalWormHole
-            ref="wormholeRef"
-            v-model:email="wormholeEmail"
-            v-model:password="wormholePassword"
-            :wormholeLogs="wormholeLogs"
-            :isAuthenticated="isAuthenticated"
-            :decodeTokenLogs="decodeTokenLogs"
-            :focusIndex="wormholeFocusIndex"
+          <TerminalPortfolio
+            v-else-if="currentArea === VisibilityArea.portfolio_terminal"
           />
-        </div>
 
-        <div class="terminal-navigation">
-          <div class="prompt">{{ TERMINAL.user }}@{{ TERMINAL.host }}:~$</div>
+          <TerminalExperience
+            v-else-if="currentArea === VisibilityArea.experience_terminal"
+          />
 
-          <nav class="terminal-menu">
-            <div v-for="(item, index) in visibleMenuItems" :key="item.id">
-              <button
-                type="button"
-                class="menu-item"
-                :class="{
-                  active: index === selectedIndex && isMenuSelectionVisible,
-                }"
-                @mouseenter="selectMenuItem(index)"
-                @focus="selectMenuItem(index)"
-                @click="activateMenuItem(index)"
-              >
-                <span class="arrow"> &gt; </span>
+          <TerminalProjects
+            v-else-if="currentArea === VisibilityArea.projects_terminal"
+          />
 
-                {{ item.name }}
-              </button>
+          <TerminalSkills
+            v-else-if="currentArea === VisibilityArea.skills_terminal"
+          />
+
+          <div v-else-if="currentArea === VisibilityArea.contact_terminal">
+            <div class="prompt">
+              {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/contact$
             </div>
-          </nav>
+            <div>CONTACT</div>
+          </div>
+
+          <div v-else-if="currentArea === VisibilityArea.wormhole_terminal">
+            <div class="prompt">
+              {{ TERMINAL.user }}@{{ TERMINAL.host }}:~/wormhole$
+            </div>
+
+            <TerminalWormHole
+              ref="wormholeRef"
+              v-model:email="wormholeEmail"
+              v-model:password="wormholePassword"
+              :wormholeLogs="wormholeLogs"
+              :isAuthenticated="isAuthenticated"
+              :decodeTokenLogs="decodeTokenLogs"
+              :focusIndex="wormholeFocusIndex"
+            />
+          </div>
+
+          <div class="terminal-navigation">
+            <div class="prompt">{{ TERMINAL.user }}@{{ TERMINAL.host }}:~$</div>
+
+            <nav class="terminal-menu">
+              <div v-for="(item, index) in visibleMenuItems" :key="item.id">
+                <button
+                  type="button"
+                  class="menu-item"
+                  :class="{
+                    active: index === selectedIndex && isMenuSelectionVisible,
+                  }"
+                  @mouseenter="selectMenuItem(index)"
+                  @focus="selectMenuItem(index)"
+                  @click="activateMenuItem(index)"
+                >
+                  <span class="arrow"> &gt; </span>
+
+                  {{ item.name }}
+                </button>
+              </div>
+            </nav>
+          </div>
+        </div>
+
+        <div class="terminal-footer">
+          <span> ↑ ↓ NAVIGATE </span>
+
+          <span> ENTER SELECT </span>
+
+          <span> ESC BACK </span>
+
+          <span> ONLINE ● </span>
         </div>
       </div>
 
-      <div class="terminal-footer">
-        <span> ↑ ↓ NAVIGATE </span>
-
-        <span> ENTER SELECT </span>
-
-        <span> ESC BACK </span>
-
-        <span> ONLINE ● </span>
-      </div>
-    </div>
+      <button
+        v-else
+        type="button"
+        class="minimized-terminal"
+        aria-label="Restore terminal"
+        @click="restoreTerminal"
+      >
+        <span class="minimized-dot"></span>
+        <span class="minimized-title">SYSTEM TERMINAL</span>
+        <span class="minimized-path">
+          {{ TERMINAL.user }}@{{ TERMINAL.host }}:{{ currentLocation }}
+        </span>
+        <span class="minimized-action">OPEN</span>
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -564,13 +609,28 @@ body {
   width: 120px;
 }
 
-.window-controls span {
+.window-control {
   width: 10px;
   height: 10px;
+  padding: 0;
+  border: 0;
 
   border-radius: 50%;
 
   background: #343a40;
+}
+
+button.window-control {
+  cursor: pointer;
+}
+
+button.window-control:hover {
+  transform: scale(1.15);
+}
+
+button.window-control:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 3px;
 }
 
 .terminal-title {
@@ -690,6 +750,107 @@ body {
 
 .terminal-footer span:last-child {
   color: var(--terminal-accent);
+}
+
+.terminal-window-enter-active,
+.terminal-window-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 260ms ease,
+    filter 260ms ease;
+  transform-origin: bottom center;
+}
+
+.terminal-window-enter-from {
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(120px) scale(0.92);
+}
+
+.terminal-window-leave-to {
+  opacity: 0;
+  filter: blur(5px);
+  transform: translateY(180px) scale(0.86);
+}
+
+.minimized-terminal {
+  width: min(560px, 88vw);
+  min-height: 54px;
+
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+
+  padding: 12px 16px;
+  border: 1px solid var(--terminal-border);
+  border-radius: 8px;
+
+  background: #0a0d0f;
+  color: var(--terminal-muted);
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 14px 42px rgba(0, 0, 0, 0.5);
+
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.minimized-terminal:hover,
+.minimized-terminal:focus-visible {
+  border-color: rgba(140, 255, 176, 0.36);
+  color: var(--terminal-text);
+  transform: translateY(-2px);
+}
+
+.minimized-terminal:focus-visible {
+  outline: none;
+}
+
+.minimized-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--terminal-accent);
+  box-shadow: 0 0 14px rgba(140, 255, 176, 0.45);
+}
+
+.minimized-title {
+  color: var(--terminal-text);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.minimized-path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--terminal-muted);
+  font-size: 12px;
+}
+
+.minimized-action {
+  color: var(--terminal-accent);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 680px) {
+  .minimized-terminal {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .minimized-title {
+    display: none;
+  }
 }
 
 @keyframes cursor-blink {

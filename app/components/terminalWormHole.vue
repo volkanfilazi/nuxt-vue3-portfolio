@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JwtPayload, WormholeLog } from "./models/terminal";
+import type { JwtPayload, WormholeLog } from "../models/terminal";
 
 const props = defineProps<{
   wormholeLogs: WormholeLog[];
@@ -97,20 +97,13 @@ function formatUnixDate(value?: number) {
 
 <template>
   <div class="wormhole-terminal">
-    <div class="wormhole-title">
-      SIGNFLOW WORMHOLE
-    </div>
+    <div class="wormhole-title">SIGNFLOW WORMHOLE</div>
 
     <div class="form w-100">
-
       <!-- LOGIN FORM -->
       <div v-if="!isAuthenticated">
-
         <!-- EMAIL -->
-        <div
-          class="form-row"
-          :class="{ active: focusIndex === 0 }"
-        >
+        <div class="form-row" :class="{ active: focusIndex === 0 }">
           <label>EMAIL</label>
 
           <input
@@ -124,10 +117,7 @@ function formatUnixDate(value?: number) {
         </div>
 
         <!-- PASSWORD -->
-        <div
-          class="form-row"
-          :class="{ active: focusIndex === 1 }"
-        >
+        <div class="form-row" :class="{ active: focusIndex === 1 }">
           <label>PASSWORD</label>
 
           <input
@@ -138,7 +128,6 @@ function formatUnixDate(value?: number) {
             autocomplete="current-password"
           />
         </div>
-
       </div>
 
       <!-- AUTH LOGS -->
@@ -147,22 +136,16 @@ function formatUnixDate(value?: number) {
         :key="index"
         class="auth-result"
       >
-
         <!-- SUCCESS -->
         <div v-if="log.type === 'success'">
           ✓ {{ log.message }}
 
           <div v-if="log.data">
-
             <!-- ACCESS TOKEN -->
             <div class="section">
-              <div class="label">
-                ACCESS TOKEN
-              </div>
+              <div class="label">ACCESS TOKEN</div>
 
-              <div
-                class="d-flex flex-row align-items-center gap-2"
-              >
+              <div class="d-flex flex-row align-items-center gap-2">
                 <span>Access</span>
 
                 <code>
@@ -170,9 +153,7 @@ function formatUnixDate(value?: number) {
                 </code>
               </div>
 
-              <div
-                class="d-flex flex-row align-items-center gap-2"
-              >
+              <div class="d-flex flex-row align-items-center gap-2">
                 <span>User</span>
 
                 <strong>
@@ -180,9 +161,7 @@ function formatUnixDate(value?: number) {
                 </strong>
               </div>
 
-              <div
-                class="d-flex flex-row align-items-center gap-2"
-              >
+              <div class="d-flex flex-row align-items-center gap-2">
                 <span>Expires</span>
 
                 <strong>
@@ -193,13 +172,9 @@ function formatUnixDate(value?: number) {
 
             <!-- REFRESH TOKEN -->
             <div class="section">
-              <div class="label">
-                REFRESH
-              </div>
+              <div class="label">REFRESH</div>
 
-              <div
-                class="d-flex flex-row align-items-center gap-2"
-              >
+              <div class="d-flex flex-row align-items-center gap-2">
                 <span>Token</span>
 
                 <code>
@@ -207,17 +182,11 @@ function formatUnixDate(value?: number) {
                 </code>
               </div>
 
-              <div
-                class="d-flex flex-row align-items-center gap-2"
-              >
+              <div class="d-flex flex-row align-items-center gap-2">
                 <span>Expires</span>
 
                 <strong>
-                  {{
-                    formatDate(
-                      log.data.refreshTokenExpiresAtUtc
-                    )
-                  }}
+                  {{ formatDate(log.data.refreshTokenExpiresAtUtc) }}
                 </strong>
               </div>
             </div>
@@ -225,9 +194,7 @@ function formatUnixDate(value?: number) {
             <!-- DECODED TOKEN -->
             <div v-if="decodeTokenLogs">
               <div class="section">
-                <div class="label">
-                  DECODED CLAIMS
-                </div>
+                <div class="label">DECODED CLAIMS</div>
 
                 <div class="claims">
                   <div
@@ -241,7 +208,6 @@ function formatUnixDate(value?: number) {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
 
@@ -251,7 +217,6 @@ function formatUnixDate(value?: number) {
 
           <pre>{{ log.error }}</pre>
         </div>
-
       </div>
     </div>
   </div>
