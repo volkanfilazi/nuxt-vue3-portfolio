@@ -1,4 +1,4 @@
-# Volkan Filazi - Terminal Portfolio
+# Terminal Portfolio
 
 A small Nuxt portfolio with a keyboard-first terminal interface.
 
